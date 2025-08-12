@@ -1,338 +1,368 @@
---Drop table part
-DROP TABLE Disposed_Medicine CASCADE CONSTRAINTS;
-DROP TABLE Medicine_Details CASCADE CONSTRAINTS;
-DROP TABLE Customer_Insurance CASCADE CONSTRAINTS;
-DROP TABLE Employee_Details CASCADE CONSTRAINTS;
-DROP TABLE Customer_Order CASCADE CONSTRAINTS;
-DROP TABLE Ordered_Drugs CASCADE CONSTRAINTS;
-DROP TABLE Customer_Bill CASCADE CONSTRAINTS;
-DROP TABLE Prescription CASCADE CONSTRAINTS;
-DROP TABLE Prescribed_Drugs CASCADE CONSTRAINTS;
-DROP TABLE Customer CASCADE CONSTRAINTS;
-DROP TABLE Employee_Disposed_Medicine CASCADE CONSTRAINTS;
+SET FOREIGN_KEY_CHECKS = 0;
 
-
---table creation part
-CREATE TABLE Medicine_Details (
-    Drug_Name           VARCHAR2(255) CONSTRAINT MD_pk PRIMARY KEY,
-    Drug_ID             VARCHAR2(10) CONSTRAINT MD_DrugID_nn NOT NULL, 
-    Batch_Number        NUMBER(10), 
-    Medicine_Type       VARCHAR2(255), 
-    Manufacturer        VARCHAR2(255), 
-    Stock_Quantity      NUMBER(10), 
-    Mfd_Date            DATE,
-    Expiry_Date         DATE, 
-    Medicine_Price      NUMBER(4)
-);
-
-
-CREATE TABLE Disposed_Medicine (
-    Medicine_Name      VARCHAR2(255) PRIMARY KEY,
-    Batch_Number        NUMBER(10),
-    Medicine_Quantity   NUMBER(10),
-    Manufacturer        VARCHAR2(255),
-    CONSTRAINT DM_Order_FK FOREIGN KEY (Medicine_Name) REFERENCES Medicine_Details (Drug_Name)
-);
-
-CREATE TABLE Customer_Insurance (
-    Insurance_ID    NUMBER(10) PRIMARY KEY, 
-    Company_Name    VARCHAR2(255), 
-    Start_Date      DATE, 
-    End_Date        DATE, 
-    Co_Insurance    NUMBER(4)
-);
-
-CREATE TABLE Employee_Details (
-    Employee_ID         NUMBER(5) PRIMARY KEY, 
-    Employee_SSN        NUMBER(10) UNIQUE, 
-    Employee_License    NUMBER(10) UNIQUE, 
-    Employee_Name       VARCHAR2(255),
-    Employee_Start_Date DATE, 
-    Employee_End_Date   DATE, 
-    Employee_Role       VARCHAR2(255), 
-    Employee_Salary     NUMBER(4), 
-    Employee_Phone      NUMBER(10), 
-    Employee_DOB        DATE
-);
+--Drop tables
+DROP TABLE IF EXISTS Notification;
+DROP TABLE IF EXISTS Ordered_Drugs;
+DROP TABLE IF EXISTS Ordered_Table;
+DROP TABLE IF EXISTS Prescription;
+DROP TABLE IF EXISTS Prescribed_Drugs;
+DROP TABLE IF EXISTS Bill;
+DROP TABLE IF EXISTS Customer_Order;
+DROP TABLE IF EXISTS Insurance;
+DROP TABLE IF EXISTS Employee;
+DROP TABLE IF EXISTS Employee_Notification;
+DROP TABLE IF EXISTS Medicine;
+DROP TABLE IF EXISTS Disposed_Drugs;
+DROP TABLE IF EXISTS Employee_Disposed_Drugs;
+DROP TABLE IF EXISTS Customer;
 
 
 CREATE TABLE Customer (
-    Customer_SSN       NUMBER(10) PRIMARY KEY, 
-    Customer_Name      VARCHAR2(255), 
-    Customer_Phone     NUMBER(10) UNIQUE, 
-    Customer_Gender    VARCHAR2(1), 
-    Customer_Address   VARCHAR2(1000), 
-    Customer_State     VARCHAR2(15),
-    Customer_Country   VARCHAR2(15),
-    Customer_DOB       DATE, 
-    Customer_Insurance NUMBER(10) UNIQUE
+    SSN BIGINT PRIMARY KEY, 
+    First_Name VARCHAR(255) NOT NULL, 
+    Last_Name VARCHAR(255) NOT NULL, 
+    Phone BIGINT UNIQUE NOT NULL, 
+    Gender CHAR(1) NOT NULL, 
+    Address VARCHAR(1000) NOT NULL, 
+    Date_of_Birth DATE NOT NULL, 
+    Insurance_ID BIGINT UNIQUE NOT NULL
 );
+SHOW TABLES;
+/* Create Insurance table*/
+CREATE TABLE Insurance (
+    Insurance_ID BIGINT(10) PRIMARY KEY, 
+    Company_Name VARCHAR(255) NOT NULL, 
+    Start_Date DATE NOT NULL, 
+    End_Date DATE NOT NULL, 
+    Co_Insurance INT(4) NOT NULL
+) ENGINE=InnoDB;
 
+/* Create Employee table*/
+CREATE TABLE Employee (
+    ID INT(5) PRIMARY KEY, 
+    SSN BIGINT(10) UNIQUE NOT NULL, 
+    License BIGINT(10) UNIQUE, 
+    First_Name VARCHAR(255) NOT NULL, 
+    Last_Name VARCHAR(255) NOT NULL, 
+    Start_Date DATE NOT NULL, 
+    End_Date DATE, 
+    Role VARCHAR(255) NOT NULL, 
+    Salary INT(4) NOT NULL, 
+    Phone_Number BIGINT(10) NOT NULL, 
+    Date_of_Birth DATE NOT NULL
+) ENGINE=InnoDB;
+
+/*Create Medicine table*/
+CREATE TABLE Medicine (
+    Drug_Name VARCHAR(255) NOT NULL, 
+    Batch_Number BIGINT(10) NOT NULL, 
+    Medicine_Type VARCHAR(255) NOT NULL, 
+    Manufacturer VARCHAR(255) NOT NULL, 
+    Stock_Quantity BIGINT(10) NOT NULL, 
+    Expiry_Date DATE NOT NULL, 
+    Price DECIMAL(10,2) NOT NULL,
+    PRIMARY KEY (Drug_Name, Batch_Number)
+) ENGINE=InnoDB;
+
+/*Create Prescription table*/
 CREATE TABLE Prescription (
-    Prescription_ID   NUMBER(10) PRIMARY KEY, 
-    Patient_SSN       NUMBER(10), 
-    Doctor_ID         NUMBER(10), 
-    Prescription_Date DATE,
-    CONSTRAINT P_Patient_FK FOREIGN KEY (Patient_SSN) REFERENCES Customer (Customer_SSN),
-    CONSTRAINT P_Doctor_FK FOREIGN KEY (Doctor_ID) REFERENCES Employee_Details (Employee_ID)
-);
+    Prescription_ID BIGINT(10) PRIMARY KEY, 
+    SSN BIGINT(10) NOT NULL, 
+    Doctor_ID BIGINT(10) NOT NULL, 
+    Prescribed_Date DATE NOT NULL,
+    FOREIGN KEY (SSN) REFERENCES Customer (SSN)
+) ENGINE=InnoDB;
 
-
-CREATE TABLE Customer_Order (
-    Order_ID          NUMBER(10) PRIMARY KEY, 
-    Prescription_ID   NUMBER(10), 
-    Employee_ID       NUMBER(5), 
-    Order_Date        DATE,
-    CONSTRAINT CO_Prescription_FK FOREIGN KEY (Prescription_ID) REFERENCES Prescription (Prescription_ID),
-    CONSTRAINT CO_Employee_FK FOREIGN KEY (Employee_ID) REFERENCES Employee_Details (Employee_ID)
-);
-
-
-
-CREATE TABLE Ordered_Drugs (
-    Order_ID              NUMBER(10) PRIMARY KEY, 
-    Drug_Name             VARCHAR2(255), 
-    Batch_Number          NUMBER(10), 
-    Ordered_Quantity      NUMBER(10), 
-    Price                 NUMBER(2),
-    CONSTRAINT OD_Order_FK FOREIGN KEY (Order_ID) REFERENCES Customer_Order (Order_ID),
-    CONSTRAINT OD_Drug_FK FOREIGN KEY (Drug_Name) REFERENCES Medicine_Details (Drug_Name)
-);
-
-CREATE TABLE Customer_Bill (
-    Order_ID            NUMBER(10) PRIMARY KEY, 
-    Customer_SSN        NUMBER(10), 
-    Total_Amount        NUMBER(4), 
-    Customer_Payment    NUMBER(4), 
-    Insurance_Payment   NUMBER(4), 
-    Billing_Num         VARCHAR2(10),
-    CONSTRAINT CB_Order_FK FOREIGN KEY (Order_ID) REFERENCES Customer_Order (Order_ID),
-    CONSTRAINT CB_Customer_FK FOREIGN KEY (Customer_SSN) REFERENCES Customer (Customer_SSN)
-);
-
-
-CREATE TABLE Employee_Disposed_Medicine (
-    Employee_ID        NUMBER(5),
-    Medicine_Name      VARCHAR2(255),
-    Medicine_Batch     NUMBER(10),
-    Disposal_Date      DATE,
-    PRIMARY KEY (Employee_ID, Medicine_Name, Medicine_Batch, Disposal_Date),
-    CONSTRAINT EDM_Employee_FK FOREIGN KEY (Employee_ID) REFERENCES Employee_Details (Employee_ID),
-    CONSTRAINT EDM_Medicine_FK FOREIGN KEY (Medicine_Name) REFERENCES Disposed_Medicine (Medicine_Name)
-);
-
-
+/*Create Prescribed Drugs table*/
 CREATE TABLE Prescribed_Drugs (
-    Prescription_ID       NUMBER(10),
-    Drug_Name             VARCHAR2(255),
-    Prescribed_Quantity   NUMBER(10),
-    Refill_Limit          NUMBER(10),
+    Prescription_ID BIGINT(10) NOT NULL, 
+    Drug_Name VARCHAR(255) NOT NULL, 
+    Prescribed_Quantity BIGINT(10) NOT NULL, 
+    Refill_Limit BIGINT(10) NOT NULL,
     PRIMARY KEY (Prescription_ID, Drug_Name),
-    CONSTRAINT PD_Prescription_FK FOREIGN KEY (Prescription_ID) REFERENCES Prescription (Prescription_ID),
-    CONSTRAINT PD_Drug_FK FOREIGN KEY (Drug_Name) REFERENCES Medicine_Details (Drug_Name)
-);
+    FOREIGN KEY (Prescription_ID) REFERENCES Prescription (Prescription_ID)
+) ENGINE=InnoDB;
 
---display all tables
-SELECT *FROM Medicine_Details;
-SELECT *FROM Disposed_Medicine;
-SELECT *FROM Customer_Insurance;
-SELECT *FROM Employee_Details;
-SELECT *FROM Customer;
-SELECT *FROM Customer_order;
-SELECT *FROM Prescription;
-SELECT *FROM Ordered_Drugs;
-SELECT *FROM Employee_Disposed_Medicine;
-SELECT *FROM Customer_Bill;
-SELECT *FROM Prescribed_Drugs;
+/*Create Order table*/
+CREATE TABLE Order_Table (
+    Order_ID BIGINT(10) PRIMARY KEY, 
+    Prescription_ID BIGINT(10) NOT NULL, 
+    Employee_ID INT(5) NOT NULL, 
+    Order_Date DATE NOT NULL,
+    FOREIGN KEY (Employee_ID) REFERENCES Employee (ID),
+    FOREIGN KEY (Prescription_ID) REFERENCES Prescription (Prescription_ID)
+) ENGINE=InnoDB;
 
--- value insertion part
+/* Create Ordered Drugs table*/
+CREATE TABLE Ordered_Drugs (
+    Order_ID BIGINT(10) NOT NULL, 
+    Drug_Name VARCHAR(255) NOT NULL, 
+    Batch_Number BIGINT(10) NOT NULL, 
+    Ordered_Quantity BIGINT(10) NOT NULL, 
+    Price DECIMAL(10,2) NOT NULL,
+    PRIMARY KEY (Order_ID, Drug_Name, Batch_Number),
+    FOREIGN KEY (Order_ID) REFERENCES Order_Table (Order_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Drug_Name, Batch_Number) REFERENCES Medicine (Drug_Name, Batch_Number)
+) ENGINE=InnoDB;
 
-INSERT INTO Medicine_Details VALUES ('Paracetamol', 'ID1', 101, 'Tablet', 'LOL Manufacturer', 500, TO_DATE('2022-01-01', 'YYYY-MM-DD'), TO_DATE('2023-01-01', 'YYYY-MM-DD'), 15.0);
-INSERT INTO Medicine_Details VALUES ('Amoxicillin', 'ID2', 102, 'Capsule', 'LMAO Manufacturer', 700, TO_DATE('2022-02-01', 'YYYY-MM-DD'), TO_DATE('2023-02-01', 'YYYY-MM-DD'), 20.0);
-INSERT INTO Medicine_Details VALUES ('Ibuprofen', 'ID3', 103, 'Tablet', 'LMFAO Manufacturer', 300, TO_DATE('2022-03-01', 'YYYY-MM-DD'), TO_DATE('2023-03-01', 'YYYY-MM-DD'), 10.0);
-INSERT INTO Medicine_Details VALUES ('Azithromycin', 'ID4', 104, 'Capsule', 'OMG Manufacturer', 600, TO_DATE('2022-04-01', 'YYYY-MM-DD'), TO_DATE('2023-04-01', 'YYYY-MM-DD'), 25.0);
-INSERT INTO Medicine_Details VALUES ('Omeprazole', 'ID5', 105, 'Capsule', 'OMFG Manufacturer', 400, TO_DATE('2022-05-01', 'YYYY-MM-DD'), TO_DATE('2023-05-01', 'YYYY-MM-DD'), 18.0);
+/* Create Bill table*/
+CREATE TABLE Bill (
+    Order_ID BIGINT(10) NOT NULL, 
+    Customer_SSN BIGINT(10) NOT NULL, 
+    Total_Amount DECIMAL(10,2) NOT NULL, 
+    Customer_Payment DECIMAL(10,2) NOT NULL, 
+    Insurance_Payment DECIMAL(10,2) NOT NULL,
+    PRIMARY KEY (Order_ID, Customer_SSN),
+    FOREIGN KEY (Order_ID) REFERENCES Order_Table (Order_ID),
+    FOREIGN KEY (Customer_SSN) REFERENCES Customer (SSN)
+) ENGINE=InnoDB;
 
+/*Create Disposed Drugs table*/
+CREATE TABLE Disposed_Drugs (
+    Drug_Name VARCHAR(255) NOT NULL, 
+    Batch_Number BIGINT(10) NOT NULL, 
+    Quantity BIGINT(10) NOT NULL, 
+    Company VARCHAR(255) NOT NULL,
+    PRIMARY KEY (Drug_Name, Batch_Number),
+    FOREIGN KEY (Drug_Name, Batch_Number) REFERENCES Medicine (Drug_Name, Batch_Number)
+) ENGINE=InnoDB;
 
-INSERT INTO Disposed_Medicine VALUES ('Paracetamol', 101, 50, 'LOL Manufacturer');
-INSERT INTO Disposed_Medicine VALUES ('Amoxicillin', 102, 30, 'LMAO Manufacturer');
-INSERT INTO Disposed_Medicine VALUES ('Ibuprofen', 103, 20, 'LMFAO Manufacturer');
-INSERT INTO Disposed_Medicine VALUES ('Azithromycin', 104, 40, 'OMG Manufacturer');
-INSERT INTO Disposed_Medicine VALUES ('Omeprazole', 105, 25, 'OMFG Manufacturer');
+/*Create Notification table*/
+CREATE TABLE Notification (
+    ID BIGINT(10) PRIMARY KEY, 
+    Message VARCHAR(255) NOT NULL, 
+    Type VARCHAR(255) NOT NULL
+) ENGINE=InnoDB;
 
+/* Create Employee_Notification table*/
+CREATE TABLE Employee_Notification (
+    Employee_ID INT(5) NOT NULL, 
+    Notification_ID BIGINT(10) NOT NULL, 
+    PRIMARY KEY (Employee_ID, Notification_ID),
+    FOREIGN KEY (Employee_ID) REFERENCES Employee (ID) ON DELETE CASCADE,
+    FOREIGN KEY (Notification_ID) REFERENCES Notification (ID) ON DELETE CASCADE
+) ENGINE=InnoDB;
 
-INSERT INTO Customer_Insurance VALUES (1, 'LOL Company', TO_DATE('2022-01-01', 'YYYY-MM-DD'), TO_DATE('2023-01-01', 'YYYY-MM-DD'), 5.0);
-INSERT INTO Customer_Insurance VALUES (2, 'LMAO Company', TO_DATE('2022-02-01', 'YYYY-MM-DD'), TO_DATE('2023-02-01', 'YYYY-MM-DD'), 8.0);
-INSERT INTO Customer_Insurance VALUES (3, 'LMFAO Company', TO_DATE('2022-03-01', 'YYYY-MM-DD'), TO_DATE('2023-03-01', 'YYYY-MM-DD'), 10.0);
-INSERT INTO Customer_Insurance VALUES (4, 'OMG Company', TO_DATE('2022-04-01', 'YYYY-MM-DD'), TO_DATE('2023-04-01', 'YYYY-MM-DD'), 6.0);
-INSERT INTO Customer_Insurance VALUES (5, 'OMFG Company', TO_DATE('2022-05-01', 'YYYY-MM-DD'), TO_DATE('2023-05-01', 'YYYY-MM-DD'), 7.0);
+/* Create Employee_Disposed_Drugs table*/
+CREATE TABLE Employee_Disposed_Drugs (
+    Employee_ID INT(5) NOT NULL, 
+    Drug_Name VARCHAR(255) NOT NULL, 
+    Batch_Number BIGINT(10) NOT NULL, 
+    Disposal_Date DATE NOT NULL, 
+    PRIMARY KEY (Employee_ID, Drug_Name, Batch_Number),
+    FOREIGN KEY (Employee_ID) REFERENCES Employee (ID),
+    FOREIGN KEY (Drug_Name, Batch_Number) REFERENCES Disposed_Drugs (Drug_Name, Batch_Number)
+) ENGINE=InnoDB;
 
+SET FOREIGN_KEY_CHECKS = 1;
 
-INSERT INTO Employee_Details VALUES (1, 1234567890, 111, 'John Doe', TO_DATE('2022-01-01', 'YYYY-MM-DD'), TO_DATE('2023-01-01', 'YYYY-MM-DD'), 'LOL Role', 5000, 9876543210, TO_DATE('1990-01-01', 'YYYY-MM-DD'));
-INSERT INTO Employee_Details VALUES (2, 2345678901, 222, 'Jane Smith', TO_DATE('2022-02-01', 'YYYY-MM-DD'), TO_DATE('2023-02-01', 'YYYY-MM-DD'), 'LMAO Role', 6000, 8765432109, TO_DATE('1985-01-01', 'YYYY-MM-DD'));
-INSERT INTO Employee_Details VALUES (3, 3456789012, 333, 'Alice Brown', TO_DATE('2022-03-01', 'YYYY-MM-DD'), TO_DATE('2023-03-01', 'YYYY-MM-DD'), 'LMFAO Role', 7000, 7654321098, TO_DATE('1988-01-01', 'YYYY-MM-DD'));
-INSERT INTO Employee_Details VALUES (4, 4567890123, 444, 'Bob Williams', TO_DATE('2022-04-01', 'YYYY-MM-DD'), TO_DATE('2023-04-01', 'YYYY-MM-DD'), 'OMG Role', 8000, 6543210987, TO_DATE('1982-01-01', 'YYYY-MM-DD'));
-INSERT INTO Employee_Details VALUES (5, 5678901234, 555, 'Charlie Johnson', TO_DATE('2022-05-01', 'YYYY-MM-DD'), TO_DATE('2023-05-01', 'YYYY-MM-DD'), 'OMFG Role', 9000, 5432109876, TO_DATE('1980-01-01', 'YYYY-MM-DD'));
+-- Insert into Customer
+INSERT INTO Customer (SSN, First_Name, Last_Name, Phone, Gender, Address, Date_of_Birth, Insurance_ID) VALUES
+(123456789, 'John', 'Doe', 9876543210, 'M', '123 Main St', '1990-01-01', 987654321),
+(234567890, 'Jane', 'Smith', 8765432109, 'F', '456 Oak St', '1985-05-15', 876543210),
+(345678901, 'Alice', 'Johnson', 7654321098, 'F', '789 Pine St', '1992-09-20', 765432109),
+(456789012, 'Bob', 'Williams', 6543210987, 'M', '101 Elm St', '1988-03-12', 654321098),
+(567890123, 'Charlie', 'Brown', 5432109876, 'M', '202 Maple St', '1995-07-08', 543210987);
 
+-- Insert into Prescription
+INSERT INTO Prescription (Prescription_ID, SSN, Doctor_ID, Prescribed_Date) VALUES
+(1, 123456789, 101, '2024-01-07'),
+(2, 234567890, 102, '2024-01-08'),
+(3, 345678901, 103, '2024-01-09'),
+(4, 456789012, 104, '2024-01-10'),
+(5, 567890123, 105, '2024-01-11');
 
-INSERT INTO Customer VALUES (1111111111, 'Aria Scott', 9876543210, 'F', 'Vidya Nagar', 'Maharashtra', 'India', TO_DATE('1980-01-01', 'YYYY-MM-DD'), 1);
-INSERT INTO Customer VALUES (2222222222, 'Brandon Taylor', 8765432109, 'M', 'Lingaraj Nagar', 'Karnataka', 'India', TO_DATE('1990-01-01', 'YYYY-MM-DD'), 2);
-INSERT INTO Customer VALUES (3333333333, 'Chloe Carter', 7654321098, 'M', 'Hanuman Nagar', 'Tamil Nadu', 'India', TO_DATE('1985-01-01', 'YYYY-MM-DD'), 3);
-INSERT INTO Customer VALUES (4444444444, 'Kanye West', 6543210987, 'M', 'MotaBhai Nagar', 'Gujarat', 'India', TO_DATE('1970-01-01', 'YYYY-MM-DD'), 4);
-INSERT INTO Customer VALUES (5555555555, 'Ella Harris', 5432109876, 'F', 'Ganesh Nagar', 'Kerala', 'India', TO_DATE('1982-01-01', 'YYYY-MM-DD'), 5);
+-- Insert into Prescribed_Drugs
+INSERT INTO Prescribed_Drugs (Prescription_ID, Drug_Name, Prescribed_Quantity, Refill_Limit) VALUES
+(1, 'Aspirin', 30, 5),
+(2, 'Ibuprofen', 20, 3),
+(3, 'Paracetamol', 25, 4),
+(4, 'Amoxicillin', 15, 2),
+(5, 'Lisinopril', 10, 1);
 
-INSERT INTO Prescription VALUES (101, 1111111111, 1, TO_DATE('2022-01-01', 'YYYY-MM-DD'));
-INSERT INTO Prescription VALUES (102, 2222222222, 2, TO_DATE('2022-02-01', 'YYYY-MM-DD'));
-INSERT INTO Prescription VALUES (103, 3333333333, 3, TO_DATE('2022-03-01', 'YYYY-MM-DD'));
-INSERT INTO Prescription VALUES (104, 4444444444, 4, TO_DATE('2022-04-01', 'YYYY-MM-DD'));
-INSERT INTO Prescription VALUES (105, 5555555555, 5, TO_DATE('2022-05-01', 'YYYY-MM-DD'));
+-- Insert into Employee
+INSERT INTO Employee (ID, SSN, License, First_Name, Last_Name, Start_Date, End_Date, Role, Salary, Phone_Number, Date_of_Birth) VALUES
+(201, 123456789, 987654, 'Dr. Smith', 'Dentist', '2010-01-01', NULL, 'Dentist', 80000, 1112223333, '1975-05-10'),
+(202, 234567890, 876543, 'Dr. Johnson', 'Cardiologist', '2012-01-01', NULL, 'Cardiologist', 90000, 2223334444, '1980-02-15'),
+(203, 345678901, 765432, 'Dr. Williams', 'Pediatrician', '2015-01-01', NULL, 'Pediatrician', 85000, 3334445555, '1985-09-20'),
+(204, 456789012, 654321, 'Dr. Davis', 'Surgeon', '2018-01-01', NULL, 'Surgeon', 100000, 4445556666, '1978-03-12'),
+(205, 567890123, 543210, 'Dr. Miller', 'Oncologist', '2020-01-01', NULL, 'Oncologist', 95000, 5556667777, '1987-07-08');
 
+-- Insert into Order_Table
+INSERT INTO Order_Table (Order_ID, Prescription_ID, Employee_ID, Order_Date) VALUES
+(101, 1, 201, '2024-01-12'),
+(102, 2, 202, '2024-01-13'),
+(103, 3, 203, '2024-01-14'),
+(104, 4, 204, '2024-01-15'),
+(105, 5, 205, '2024-01-16');
 
+-- Insert into Insurance
+INSERT INTO Insurance (Insurance_ID, Company_Name, Start_Date, End_Date, Co_Insurance) VALUES
+(501, 'XYZ Insurance', '2020-01-01', '2025-01-01', 20),
+(502, 'ABC Insurance', '2019-01-01', '2024-01-01', 15),
+(503, 'PQR Insurance', '2022-01-01', '2027-01-01', 25),
+(504, 'LMN Insurance', '2018-01-01', '2023-01-01', 18),
+(505, 'DEF Insurance', '2023-01-01', '2028-01-01', 22);
 
-INSERT INTO Customer_Order VALUES (1, 101, 1, TO_DATE('2022-01-10', 'YYYY-MM-DD'));
-INSERT INTO Customer_Order VALUES (2, 102, 2, TO_DATE('2022-02-10', 'YYYY-MM-DD'));
-INSERT INTO Customer_Order VALUES (3, 103, 3, TO_DATE('2022-03-10', 'YYYY-MM-DD'));
-INSERT INTO Customer_Order VALUES (4, 104, 4, TO_DATE('2022-04-10', 'YYYY-MM-DD'));
-INSERT INTO Customer_Order VALUES (5, 105, 5, TO_DATE('2022-05-10', 'YYYY-MM-DD'));
+-- Insert into Bill
+INSERT INTO Bill (Order_ID, Customer_SSN, Total_Amount, Customer_Payment, Insurance_Payment) VALUES
+(101, 123456789, 50.99, 40.99, 10.00),
+(102, 234567890, 67.97, 57.97, 10.00),
+(103, 345678901, 56.94, 46.94, 10.00),
+(104, 456789012, 72.92, 62.92, 10.00),
+(105, 567890123, 38.97, 28.97, 10.00);
 
+-- Insert into Disposed_Drugs
+INSERT INTO Disposed_Drugs (Drug_Name, Batch_Number, Quantity, Company) VALUES
+('Aspirin', 101, 5, 'ABC Disposals'),
+('Ibuprofen', 102, 3, 'XYZ Disposals'),
+('Paracetamol', 103, 4, 'PQR Disposals'),
+('Amoxicillin', 104, 2, 'LMN Disposals'),
+('Lisinopril', 105, 1, 'DEF Disposals');
 
-INSERT INTO Ordered_Drugs VALUES (1, 'Paracetamol', 101, 10, 15.0);
-INSERT INTO Ordered_Drugs VALUES (2, 'Amoxicillin', 102, 8, 20.0);
-INSERT INTO Ordered_Drugs VALUES (3, 'Ibuprofen', 103, 12, 10.0);
-INSERT INTO Ordered_Drugs VALUES (4, 'Azithromycin', 104, 5, 25.0);
-INSERT INTO Ordered_Drugs VALUES (5, 'Omeprazole', 105, 3, 18.0);
+-- Insert into Notification
+INSERT INTO Notification (ID, Message, Type) VALUES
+(1, 'Your prescription is ready for pickup.', 'Info'),
+(2, 'Appointment reminder: Dr. Smith on 2024-01-20.', 'Reminder'),
+(3, 'Important: Insurance update required.', 'Alert'),
+(4, 'New job opportunity available.', 'Job'),
+(5, 'Payment received for Order #101.', 'Payment');
 
+-- Insert into Employee_Notification
+INSERT INTO Employee_Notification (Employee_ID, Notification_ID) VALUES
+(201, 1),
+(202, 2),
+(203, 3),
+(204, 4),
+(205, 5);
 
-INSERT INTO Customer_Bill VALUES (1, 1111111111, 50.99, 40.99, 10.0, 'Billing123');
-INSERT INTO Customer_Bill VALUES (2, 2222222222, 67.97, 57.97, 10.0, 'Billing456');
-INSERT INTO Customer_Bill VALUES (3, 3333333333, 56.94, 46.94, 10.0, 'Billing789');
-INSERT INTO Customer_Bill VALUES (4, 4444444444, 72.92, 62.92, 10.0, 'Billing012');
-INSERT INTO Customer_Bill VALUES (5, 5555555555, 38.97, 28.97, 10.0, 'Billing345');
+-- Insert into Employee_Disposed_Drugs
+INSERT INTO Employee_Disposed_Drugs (Employee_ID, Drug_Name, Batch_Number, Disposal_Date) VALUES
+(201, 'Aspirin', 101, '2024-01-05'),
+(202, 'Ibuprofen', 102, '2024-01-06'),
+(203, 'Paracetamol', 103, '2024-01-07'),
+(204, 'Amoxicillin', 104, '2024-01-08'),
+(205, 'Lisinopril', 105, '2024-01-09');
 
+-- Insert into Medicine
+INSERT INTO Medicine (Drug_Name, Batch_Number, Medicine_Type, Manufacturer, Stock_Quantity, Expiry_Date, Price) VALUES
+('Aspirin', 101, 'Tablet', 'ABC Pharmaceuticals', 100, '2025-01-01', 5.99),
+('Ibuprofen', 102, 'Tablet', 'XYZ Pharma', 150, '2025-02-01', 7.49),
+('Paracetamol', 103, 'Tablet', 'PQR Pharmaceuticals', 120, '2024-12-01', 3.99),
+('Amoxicillin', 104, 'Capsule', 'LMN Drugs', 80, '2025-03-01', 12.99),
+('Lisinopril', 105, 'Tablet', 'DEF Medicines', 60, '2025-04-01', 8.99);
 
-INSERT INTO Employee_Disposed_Medicine VALUES (1, 'Paracetamol', 101, TO_DATE('2022-01-15', 'YYYY-MM-DD'));
-INSERT INTO Employee_Disposed_Medicine VALUES (2, 'Amoxicillin', 102, TO_DATE('2022-02-15', 'YYYY-MM-DD'));
-INSERT INTO Employee_Disposed_Medicine VALUES (3, 'Ibuprofen', 103, TO_DATE('2022-03-15', 'YYYY-MM-DD'));
-INSERT INTO Employee_Disposed_Medicine VALUES (4, 'Azithromycin', 104, TO_DATE('2022-04-15', 'YYYY-MM-DD'));
-INSERT INTO Employee_Disposed_Medicine VALUES (5, 'Omeprazole', 105, TO_DATE('2022-05-15', 'YYYY-MM-DD'));
+-- Insert into Ordered_Drugs
+INSERT INTO Ordered_Drugs (Order_ID, Drug_Name, Batch_Number, Ordered_Quantity, Price) VALUES
+(101, 'Aspirin', 101, 10, 5.99),
+(102, 'Ibuprofen', 102, 8, 7.49),
+(103, 'Paracetamol', 103, 12, 3.99),
+(104, 'Amoxicillin', 104, 5, 12.99),
+(105, 'Lisinopril', 105, 3, 8.99);
 
+SHOW TABLES
+-- check number of  tables 
+SELECT COUNT(*)
+FROM information_schema.tables
+WHERE table_schema = 'pharmacy';
 
-INSERT INTO Prescribed_Drugs VALUES (101, 'Paracetamol', 30, 5);
-INSERT INTO Prescribed_Drugs VALUES (102, 'Amoxicillin', 20, 3);
-INSERT INTO Prescribed_Drugs VALUES (103, 'Ibuprofen', 25, 4);
-INSERT INTO Prescribed_Drugs VALUES (104, 'Azithromycin', 15, 2);
-INSERT INTO Prescribed_Drugs VALUES (105, 'Omeprazole', 10, 1);
+-- 1. Retrieve the names and roles of all employees
+SELECT First_Name, Last_Name, Role
+FROM Employee;
 
-
-
---Retrieve the names and roles of all employees:
-SELECT Employee_Name, Employee_Role
-FROM Employee_Details;
-
-
---Find the total fee and billing status of Alice Johnson:
+-- 2. Find the total fee and billing status of Alice Johnson
 SELECT Customer_SSN, Total_Amount, Customer_Payment, Insurance_Payment
-FROM Customer_Bill 
-WHERE Customer_SSN = 3333333333;
+FROM Bill
+WHERE Customer_SSN = (SELECT SSN FROM Customer WHERE First_Name = 'Alice' AND Last_Name = 'Johnson');
 
+-- 3. Identify the medicines disposed of by 'OMG Manufacturer' (no match in your inserts, adjust name as needed)
+SELECT Drug_Name, Batch_Number, Quantity
+FROM Disposed_Drugs
+WHERE Company = 'OMG Manufacturer';
 
---Identify the medicines disposed of by OMG Manufacturer:
-SELECT Medicine_Name, Batch_Number, Medicine_Quantity
-FROM Disposed_Medicine
-WHERE Manufacturer = 'OMG Manufacturer';
+-- 4. Find the disposal details, including company, for Paracetamol
+SELECT Drug_Name, Quantity, Company
+FROM Disposed_Drugs
+WHERE Drug_Name = 'Paracetamol';
 
---Find the disposal details, including company, for aspirin:
-SELECT Medicine_Name, Medicine_Quantity, Manufacturer
-FROM Disposed_Medicine
-WHERE Medicine_Name = 'Paracetamol';
-
---Find the prescription details for MedicineA, including prescription date and doctor ID:
-SELECT pd.Prescription_ID, p.Prescription_Date, p.Doctor_ID
+-- 5. Find the prescription details for Ibuprofen
+SELECT pd.Prescription_ID, p.Prescribed_Date, p.Doctor_ID
 FROM Prescribed_Drugs pd
 JOIN Prescription p ON pd.Prescription_ID = p.Prescription_ID
 WHERE pd.Drug_Name = 'Ibuprofen';
 
+-- 6. List employees who have disposed of medicines along with details
+SELECT e.ID AS Employee_ID,
+       e.First_Name,
+       e.Last_Name,
+       edd.Drug_Name,
+       edd.Batch_Number,
+       edd.Disposal_Date
+FROM Employee e
+JOIN Employee_Disposed_Drugs edd ON e.ID = edd.Employee_ID;
 
---List the employees who have disposed of medicines along with the details of the disposed medicines:
-SELECT
-    ed.Employee_ID,
-    ed.Employee_Name,
-    edm.Medicine_Name,
-    edm.Medicine_Batch,
-    edm.Disposal_Date
-FROM
-    Employee_Details ed
-    JOIN Employee_Disposed_Medicine edm ON ed.Employee_ID = edm.Employee_ID;
-  
+-- 7. Orders containing medicines with a batch number not disposed
+SELECT DISTINCT o.Order_ID, od.Drug_Name
+FROM Order_Table o
+JOIN Ordered_Drugs od ON o.Order_ID = od.Order_ID
+LEFT JOIN Disposed_Drugs dd ON od.Batch_Number = dd.Batch_Number
+WHERE dd.Batch_Number IS NULL;
 
---Orders containing medicines with a batch number not disposed:
-SELECT DISTINCT co.Order_ID, od.Drug_Name
-FROM Customer_Order co
-JOIN Ordered_Drugs od ON co.Order_ID = od.Order_ID
-LEFT JOIN Disposed_Medicine dm ON od.Batch_Number = dm.Batch_Number
-WHERE dm.Batch_Number IS NOT NULL OR od.Batch_Number != dm.Batch_Number;
+-- 8. Retrieve all orders along with ordered drugs, quantity, and total price
+SELECT o.Order_ID, od.Drug_Name, od.Ordered_Quantity, (od.Price * od.Ordered_Quantity) AS Total_Price
+FROM Order_Table o
+JOIN Ordered_Drugs od ON o.Order_ID = od.Order_ID;
 
-
-
---Retrieve all orders along with the drugs ordered, ordered quantity, and total price:
-SELECT co.Order_ID, od.Drug_Name, od.Ordered_Quantity, od.Price * od.Ordered_Quantity AS Total_Price
-FROM Customer_Order co
-JOIN Ordered_Drugs od ON co.Order_ID = od.Order_ID;
-
-
---Find the total amount paid by each customer along with their names:
-SELECT c.Customer_SSN, c.Customer_Name, SUM(cb.Customer_Payment) AS Total_Payment
+-- 9. Total amount paid by each customer along with their names
+SELECT c.SSN AS Customer_SSN,
+       CONCAT(c.First_Name, ' ', c.Last_Name) AS Customer_Name,
+       SUM(b.Customer_Payment) AS Total_Payment
 FROM Customer c
-JOIN Customer_Bill cb ON c.Customer_SSN = cb.Customer_SSN
-GROUP BY c.Customer_SSN, c.Customer_Name;
+JOIN Bill b ON c.SSN = b.Customer_SSN
+GROUP BY c.SSN, Customer_Name;
 
-
---Find the prescription drugs with the highest refill limit:
+-- 10. Prescription drugs with highest refill limit
 SELECT Drug_Name, MAX(Refill_Limit) AS Highest_Refill_Limit
 FROM Prescribed_Drugs
 GROUP BY Drug_Name;
 
---Show the names of customers along with the total amount billed and the amount paid:
-SELECT c.Customer_SSN, 
-       c.Customer_Name,
-       SUM(cb.Total_Amount) AS Total_Billed,
-       SUM(cb.Customer_Payment) AS Total_Paid
+-- 11. Show names of customers with total billed and amount paid
+SELECT c.SSN AS Customer_SSN,
+       CONCAT(c.First_Name, ' ', c.Last_Name) AS Customer_Name,
+       SUM(b.Total_Amount) AS Total_Billed,
+       SUM(b.Customer_Payment) AS Total_Paid
 FROM Customer c
-JOIN Customer_Bill cb ON c.Customer_SSN = cb.Customer_SSN
-GROUP BY c.Customer_SSN, c.Customer_Name;
+JOIN Bill b ON c.SSN = b.Customer_SSN
+GROUP BY c.SSN, Customer_Name;
 
-
---Find the total quantity of each drug ordered across all orders:
-SELECT md.Drug_Name,
+-- 12. Total quantity of each drug ordered across all orders
+SELECT m.Drug_Name,
        SUM(od.Ordered_Quantity) AS Total_Ordered_Quantity
-FROM Medicine_Details md
-JOIN Ordered_Drugs od ON md.Drug_Name = od.Drug_Name
-GROUP BY md.Drug_Name;
+FROM Medicine m
+JOIN Ordered_Drugs od ON m.Drug_Name = od.Drug_Name
+GROUP BY m.Drug_Name;
 
+-- 13. Total price of all medicines
+SELECT SUM(Price * Stock_Quantity) AS Total_Price
+FROM Medicine;
 
---Calculate the total price of all medicines:
-SELECT SUM(Medicine_Price * Stock_Quantity) AS Total_Price
-FROM Medicine_Details;
+-- 14. Average salary of employees who have prepared orders
+SELECT AVG(e.Salary) AS Average_Salary
+FROM Employee e
+WHERE e.ID IN (SELECT DISTINCT o.Employee_ID FROM Order_Table o);
 
---Calculate the average salary of employees who have prepared orders:
-SELECT AVG(ed.Employee_Salary) AS Average_Salary
-FROM Employee_Details ed
-WHERE ed.Employee_ID IN (SELECT DISTINCT co.Employee_ID FROM Customer_Order co);
-
-
---Retrieve the names of customers who have prescriptions:
-SELECT c.Customer_SSN, c.Customer_Name
+-- 15. Names of customers who have prescriptions
+SELECT c.SSN AS Customer_SSN, CONCAT(c.First_Name, ' ', c.Last_Name) AS Customer_Name
 FROM Customer c
-WHERE EXISTS (SELECT 1 FROM Prescription p WHERE p.Patient_SSN = c.Customer_SSN);
+WHERE EXISTS (SELECT 1 FROM Prescription p WHERE p.SSN = c.SSN);
 
---Retrieve customers who have insurance with the highest co-insurance value:
+-- 16. Customers who have insurance with the highest co-insurance value
+SELECT i.Insurance_ID, i.Company_Name, i.Start_Date, i.End_Date, i.Co_Insurance
+FROM Insurance i
+WHERE i.Co_Insurance = (SELECT MAX(Co_Insurance) FROM Insurance);
 
-SELECT ci.Insurance_ID, ci.Company_Name, ci.Start_Date, ci.End_Date, ci.Co_Insurance
-FROM Customer_Insurance ci
-WHERE ci.Co_Insurance = (SELECT MAX(Co_Insurance) FROM Customer_Insurance);
-
-
---Find the prescription drugs with the highest prescribed quantity:
+-- 17. Prescription drugs with highest prescribed quantity
 SELECT pd.Prescription_ID, pd.Drug_Name, pd.Prescribed_Quantity, pd.Refill_Limit
 FROM Prescribed_Drugs pd
 WHERE pd.Prescribed_Quantity = (SELECT MAX(Prescribed_Quantity) FROM Prescribed_Drugs);
+
