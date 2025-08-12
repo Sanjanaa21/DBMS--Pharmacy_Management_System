@@ -1,6 +1,6 @@
 # DBMS--Pharmacy_Management_System
 
-##Project Overview
+## Project Overview
 
 This project implements a **Pharmacy Management System** database schema using MySQL. It models customers, employees, medicines, prescriptions, orders, billing, notifications, and medicine disposal with comprehensive relationships.
 
